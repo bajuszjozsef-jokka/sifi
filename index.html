@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIFI Portfóliókövető</title>
+<meta name="description" content="SIFI portfólió automatikus árfolyam-követéssel: aktuális érték, allokáció, részvénykitettség, értékalakulás.">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1218" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SIFI">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f7f9; --panel:#ffffff; --panel-2:#eef1f5; --fg:#131a23; --muted:#5a6676;
+  --border:#dce1e8; --accent:#0e7c86;
+  --pos:#1a7f4b; --neg:#c23b3b;
+  --c1:#3b82c4; --c2:#d98a2b; --c3:#8a6fb0; --c4:#159a8c;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 2px 8px rgba(16,24,40,.05);
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --panel-2:#1d2531; --fg:#e8edf3; --muted:#92a0b2;
+  --border:#27303d; --accent:#3fb6c0; --pos:#46c781; --neg:#e06a6a;
+  --c1:#5aa0e0; --c2:#e6a84d; --c3:#a98fd0; --c4:#3fc3b4;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.35); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --panel-2:#1d2531; --fg:#e8edf3; --muted:#92a0b2;
+  --border:#27303d; --accent:#3fb6c0; --pos:#46c781; --neg:#e06a6a;
+  --c1:#5aa0e0; --c2:#e6a84d; --c3:#a98fd0; --c4:#3fc3b4;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 2px 10px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:0 40px}
+h2{text-wrap:balance;margin:0}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hbar{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand b{font-size:16px;font-weight:700;letter-spacing:-.01em;display:block}
+.brand span{font-size:12px;color:var(--muted)}
+.hspace{flex:1}
+.chip{font-size:12px;color:var(--muted);background:var(--panel-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.tbtn{font:inherit;font-size:13px;cursor:pointer;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px}
+.tbtn:hover{border-color:var(--accent)} .tbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{margin-top:22px}
+.sechead{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sechead h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.sechead .sh-note{font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.tile .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tile .val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:26px;font-weight:600;margin-top:8px;letter-spacing:-.02em;white-space:nowrap}
+.tile .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.tile.big .val{font-size:30px}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+.alloc{display:grid;grid-template-columns:200px 1fr;gap:20px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.donut-wrap{display:flex;align-items:center;justify-content:center;position:relative}
+.donut-center{position:absolute;text-align:center}
+.donut-center .dc-lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.donut-center .dc-val{font-family:var(--mono);font-weight:600;font-size:18px;margin-top:2px}
+.legend{display:flex;flex-direction:column;gap:2px;min-width:0}
+.lrow{display:grid;grid-template-columns:14px 1fr auto auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.lrow:last-child{border-bottom:0}
+.dot{width:11px;height:11px;border-radius:3px}
+.lname{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lnum{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
+.lhead{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);padding-bottom:6px}
+.tbl-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:11px 12px;text-align:right;font-size:13.5px;border-bottom:1px solid var(--border)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.fundcell{display:flex;align-items:center;gap:9px}
+.fundcell b{font-weight:600;font-size:13.5px}
+.fundcell small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.foot td{font-weight:600;background:var(--panel-2)}
+.hist{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.chart-empty{display:flex;align-items:center;justify-content:center;height:180px;color:var(--muted);font-size:13.5px;text-align:center;padding:0 20px}
+.clegend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.clegend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:16px;height:3px;border-radius:2px;display:inline-block}
+.note{font-size:12.5px;color:var(--muted);margin-top:16px;line-height:1.6}
+.note b{color:var(--fg);font-weight:600}
+.err{background:#fde8e8;color:#8a1f1f;border:1px solid #f3c2c2;border-radius:10px;padding:12px 14px;font-size:13.5px;margin-top:16px}
+:root[data-theme="dark"] .err,@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .err{background:#3a1d1d;color:#f0b4b4;border-color:#5a2a2a}}
+@media (max-width:720px){ .tiles{grid-template-columns:repeat(2,1fr)} .alloc{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="brand">
+      <b>SIFI Portfóliókövető</b>
+      <span>Önerő · cél ~2028 nyár · automatikus árfolyam</span>
+    </div>
+    <div class="hspace"></div>
+    <span class="chip" id="asof">—</span>
+    <button class="tbtn" id="refresh" title="Friss adat lekérése">↻ Frissítés</button>
+    <button class="tbtn" id="theme" aria-label="Téma váltása"><span id="themeicon">◐</span> Téma</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="error" hidden></div>
+
+  <section>
+    <div class="tiles">
+      <div class="tile big"><div class="lab">Jelenlegi érték</div><div class="val" id="t-value">—</div><div class="sub" id="t-value-sub">napi árfolyam alapján</div></div>
+      <div class="tile"><div class="lab">Betett tőke</div><div class="val" id="t-invested">—</div><div class="sub">befizetésekből</div></div>
+      <div class="tile"><div class="lab">Eredmény</div><div class="val" id="t-pl">—</div><div class="sub" id="t-pl-sub">—</div></div>
+      <div class="tile"><div class="lab">Részvénykitettség</div><div class="val" id="t-eq">—</div><div class="sub">cél ~58,8%</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Eszközallokáció</h2></div>
+    <div class="alloc">
+      <div class="donut-wrap">
+        <svg id="donut" viewBox="0 0 160 160" width="170" height="170" role="img" aria-label="Allokáció"></svg>
+        <div class="donut-center"><div class="dc-lab">Összesen</div><div class="dc-val" id="donut-total">—</div></div>
+      </div>
+      <div class="legend" id="legend">
+        <div class="lrow lhead"><span></span><span>Alap</span><span class="lnum">Érték</span><span class="lnum">Tény</span><span class="lnum">Cél</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Alapok</h2><span class="sh-note" id="funds-note">—</span></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Alap</th><th class="num">Jegy (db)</th><th class="num">Árfolyam</th><th class="num">Betett tőke</th><th class="num">Érték</th><th class="num">Súly</th><th class="num">Eredmény</th></tr></thead>
+      <tbody id="rows"></tbody>
+      <tfoot><tr class="foot"><td>Összesen</td><td class="num"></td><td class="num"></td><td class="num" id="f-invested"></td><td class="num" id="f-value"></td><td class="num">100%</td><td class="num" id="f-pl"></td></tr></tfoot>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Értékalakulás</h2><span class="sh-note" id="hist-note"></span></div>
+    <div class="hist">
+      <div id="chartbox"></div>
+      <div class="clegend">
+        <span><i class="swatch" style="background:var(--accent)"></i> Jelenlegi érték</span>
+        <span><i class="swatch" style="background:var(--muted)"></i> Betett tőke</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Befizetések</h2><span class="sh-note" id="led-note">—</span></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Dátum</th><th>Alap</th><th class="num">Összeg</th><th class="num">Vételi ár</th><th class="num">Vett jegy</th></tr></thead>
+      <tbody id="ledrows"></tbody>
+    </table></div>
+  </section>
+
+  <p class="note">
+    <b>Automatikus követés.</b> Az árfolyamokat egy GitHub Actions feladat hétfőn, szerdán és pénteken letölti a SIFI-ről és a <code>data.json</code>-ba írja; az app ebből számol. Nincs kézi import.
+    <br><br><b>Új befizetés rögzítése:</b> szerkeszd a <code>data.json</code> <code>contributions</code> listáját a repóban (dátum, alap sorszáma 0–3, összeg, aznapi vételi ár). A jegyszám és a betett tőke ebből számolódik.
+  </p>
+</div>
+
+<script>
+"use strict";
+var CVARS=["--c1","--c2","--c3","--c4"];
+var fFt=new Intl.NumberFormat("hu-HU",{style:"currency",currency:"HUF",maximumFractionDigits:0});
+var fNav=new Intl.NumberFormat("hu-HU",{minimumFractionDigits:6,maximumFractionDigits:6});
+var fUnit=new Intl.NumberFormat("hu-HU",{maximumFractionDigits:2});
+var fInt=new Intl.NumberFormat("hu-HU",{maximumFractionDigits:0});
+function pct(x){return (x*100).toLocaleString("hu-HU",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";}
+function signFt(x){return (x>=0?"+":"−")+fFt.format(Math.abs(x));}
+function cvar(i){return getComputedStyle(document.documentElement).getPropertyValue(CVARS[i%4]).trim();}
+
+function load(k,f){try{var r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// derive units & invested per fund using contributions up to a given date (inclusive)
+function derive(DATA, asOf){
+  var per=DATA.funds.map(function(){return {units:0,invested:0};});
+  DATA.contributions.forEach(function(c){
+    if(asOf && c.date>asOf) return;
+    if(per[c.fund] && c.nav>0){ per[c.fund].units+=c.amount/c.nav; per[c.fund].invested+=c.amount; }
+  });
+  return per;
+}
+
+function render(DATA){
+  var hist=DATA.history.slice().sort(function(a,b){return a.date<b.date?-1:1;});
+  var latest=hist[hist.length-1];
+  var prices=latest?latest.prices:DATA.funds.map(function(){return 1;});
+  var per=derive(DATA, null);
+  var val=0,inv=0,eqv=0;
+  DATA.funds.forEach(function(f,i){var v=per[i].units*prices[i];val+=v;inv+=per[i].invested;eqv+=v*f.eq;});
+  var pl=val-inv, eqpct=val?eqv/val:0;
+
+  document.getElementById("asof").textContent="Értéknap: "+(latest?latest.date:"—");
+  document.getElementById("t-value").textContent=fFt.format(val);
+  document.getElementById("t-invested").textContent=fFt.format(inv);
+  var plEl=document.getElementById("t-pl"); plEl.textContent=signFt(pl); plEl.className="val "+(pl>=0?"pos":"neg");
+  document.getElementById("t-pl-sub").textContent=(pl>=0?"+":"−")+pct(Math.abs(inv?pl/inv:0))+" a betett tőkéhez";
+  document.getElementById("t-eq").textContent=pct(eqpct);
+  document.getElementById("donut-total").textContent=fFt.format(val);
+  document.getElementById("funds-note").textContent="Automatikus árfolyam · értéknap: "+(latest?latest.date:"—");
+
+  // donut
+  var C=2*Math.PI*56, off=0, svg='<circle cx="80" cy="80" r="56" fill="none" stroke="var(--panel-2)" stroke-width="18"/>';
+  DATA.funds.forEach(function(f,i){var v=per[i].units*prices[i],frac=val?v/val:0,len=frac*C;
+    svg+='<circle cx="80" cy="80" r="56" fill="none" stroke="'+cvar(i)+'" stroke-width="18" stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 80 80)"/>';off+=len;});
+  document.getElementById("donut").innerHTML=svg;
+
+  var leg=document.getElementById("legend");
+  leg.querySelectorAll(".lrow:not(.lhead)").forEach(function(n){n.remove();});
+  DATA.funds.forEach(function(f,i){var v=per[i].units*prices[i],w=val?v/val:0;
+    var row=document.createElement("div");row.className="lrow";
+    row.innerHTML='<span class="dot" style="background:'+cvar(i)+'"></span><span class="lname">'+f.name+'</span><span class="lnum">'+fFt.format(v)+'</span><span class="lnum">'+pct(w)+'</span><span class="lnum" style="color:var(--muted)">'+pct(f.target)+'</span>';
+    leg.appendChild(row);});
+
+  var rows=document.getElementById("rows");rows.innerHTML="";
+  DATA.funds.forEach(function(f,i){var u=per[i].units,ii=per[i].invested,v=u*prices[i],w=val?v/val:0,p=v-ii;
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td><div class="fundcell"><span class="dot" style="background:'+cvar(i)+'"></span><span><b>'+f.name+'</b><small>'+f.kind+'</small></span></div></td>'
+      +'<td class="num">'+fUnit.format(u)+'</td><td class="num">'+fNav.format(prices[i])+'</td><td class="num">'+fFt.format(ii)+'</td><td class="num">'+fFt.format(v)+'</td><td class="num">'+pct(w)+'</td><td class="num '+(p>=0?"pos":"neg")+'">'+signFt(p)+'</td>';
+    rows.appendChild(tr);});
+  document.getElementById("f-invested").textContent=fFt.format(inv);
+  document.getElementById("f-value").textContent=fFt.format(val);
+  var fpl=document.getElementById("f-pl");fpl.textContent=signFt(pl);fpl.className="num "+(pl>=0?"pos":"neg");
+
+  // ledger
+  var body=document.getElementById("ledrows");body.innerHTML="";
+  DATA.contributions.slice().sort(function(a,b){return a.date<b.date?-1:1;}).forEach(function(c){
+    var f=DATA.funds[c.fund]||{name:"—"},u=c.nav>0?c.amount/c.nav:0;
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td class="num">'+c.date+'</td><td><span class="dot" style="display:inline-block;margin-right:7px;width:9px;height:9px;background:'+cvar(c.fund)+'"></span>'+f.name+'</td><td class="num">'+fFt.format(c.amount)+'</td><td class="num">'+fNav.format(c.nav)+'</td><td class="num">'+fUnit.format(u)+'</td>';
+    body.appendChild(tr);});
+  var tot=DATA.contributions.reduce(function(s,c){return s+c.amount;},0);
+  document.getElementById("led-note").textContent=DATA.contributions.length+" befizetés · összesen "+fFt.format(tot);
+
+  drawChart(DATA, hist);
+}
+
+function drawChart(DATA, hist){
+  var box=document.getElementById("chartbox");
+  document.getElementById("hist-note").textContent=hist.length+" adatpont";
+  if(hist.length<2){box.innerHTML='<div class="chart-empty">Legalább két értéknap kell a grafikonhoz.</div>';return;}
+  var pts=hist.map(function(h){var per=derive(DATA,h.date),val=0,inv=0;
+    DATA.funds.forEach(function(f,i){val+=per[i].units*h.prices[i];inv+=per[i].invested;});
+    return {date:h.date,value:val,invested:inv};});
+  var W=960,H=220,pL=8,pR=8,pT=14,pB=26;
+  var vals=pts.map(function(p){return p.value;}),invs=pts.map(function(p){return p.invested;});
+  var lo=Math.min.apply(null,vals.concat(invs)),hi=Math.max.apply(null,vals.concat(invs));
+  if(lo===hi){lo*=0.98;hi=hi*1.02||1;} var pad=(hi-lo)*0.12;lo-=pad;hi+=pad;
+  var n=pts.length;
+  function X(i){return pL+(W-pL-pR)*(n===1?0.5:i/(n-1));}
+  function Y(v){return pT+(H-pT-pB)*(1-(v-lo)/(hi-lo));}
+  var grid="";
+  for(var g=0;g<=3;g++){var yy=pT+(H-pT-pB)*g/3,gv=hi-(hi-lo)*g/3;
+    grid+='<line x1="'+pL+'" y1="'+yy+'" x2="'+(W-pR)+'" y2="'+yy+'" stroke="var(--border)" stroke-width="1"/><text x="'+(W-pR)+'" y="'+(yy-4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--mono)">'+fInt.format(Math.round(gv))+'</text>';}
+  function poly(a){return a.map(function(v,i){return X(i)+","+Y(v);}).join(" ");}
+  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block" role="img" aria-label="Értékalakulás">'+grid
+    +'<polyline points="'+poly(invs)+'" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>'
+    +'<polyline points="'+poly(vals)+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+    +'<circle cx="'+X(n-1)+'" cy="'+Y(vals[n-1])+'" r="4" fill="var(--accent)"/>'
+    +'<text x="'+X(0)+'" y="'+(H-8)+'" text-anchor="start" font-size="11" fill="var(--muted)">'+pts[0].date+'</text>'
+    +'<text x="'+X(n-1)+'" y="'+(H-8)+'" text-anchor="end" font-size="11" fill="var(--muted)">'+pts[n-1].date+'</text></svg>';
+}
+
+function applyTheme(mode){
+  if(mode==="dark"||mode==="light")document.documentElement.setAttribute("data-theme",mode);
+  else document.documentElement.removeAttribute("data-theme");
+  document.getElementById("themeicon").textContent=mode==="dark"?"●":mode==="light"?"○":"◐";
+}
+var savedTheme=load("sifi_theme","system"); applyTheme(savedTheme);
+document.getElementById("theme").addEventListener("click",function(){
+  var cur=load("sifi_theme","system"),next=cur==="system"?"light":cur==="light"?"dark":"system";
+  store("sifi_theme",next); applyTheme(next);
+});
+
+function fetchData(){
+  var err=document.getElementById("error");
+  return fetch("data.json?t="+Date.now(),{cache:"no-store"})
+    .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(function(d){err.hidden=true; render(d);})
+    .catch(function(e){err.hidden=false; err.className="err"; err.textContent="Nem sikerült betölteni az adatokat (data.json). "+e.message;});
+}
+document.getElementById("refresh").addEventListener("click",fetchData);
+fetchData();
+
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});});}
+</script>
+</body>
+</html>

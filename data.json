@@ -1,0 +1,28 @@
+{
+  "updated": "2026-11-18",
+  "funds": [
+    { "name": "Nemzetközi Részvény", "kind": "globális részvény", "eq": 1.00, "target": 0.25,
+      "url": "https://signalidunafundinvest.com/hu/befektetesi-alapjaink/direkt-ertekesitesu-befektetesi-alapok/sifi-nemzetkozi" },
+    { "name": "Magyar Indexkövető", "kind": "BUX részvény", "eq": 1.00, "target": 0.25,
+      "url": "https://signalidunafundinvest.com/hu/befektetesi-alapjaink/direkt-ertekesitesu-befektetesi-alapok/sifi-magyar-indexkoveto-reszveny-alap" },
+    { "name": "SIFI Kötvény", "kind": "kötvény", "eq": 0.00, "target": 0.25,
+      "url": "https://signalidunafundinvest.com/hu/befektetesi-alapjaink/direkt-ertekesitesu-befektetesi-alapok/sifi-kotveny-alap" },
+    { "name": "SIFI Optimum", "kind": "vegyes (~35% rv.)", "eq": 0.35, "target": 0.25,
+      "url": "https://signalidunafundinvest.com/hu/befektetesi-alapjaink/direkt-ertekesitesu-befektetesi-alapok/sifi-optimum" }
+  ],
+  "contributions": [
+    { "id": "buy0", "date": "2026-10-13", "fund": 0, "amount": 200000, "nav": 1.249923 },
+    { "id": "buy1", "date": "2026-10-13", "fund": 1, "amount": 200000, "nav": 2.027848 },
+    { "id": "buy2", "date": "2026-10-13", "fund": 2, "amount": 200000, "nav": 1.150812 },
+    { "id": "buy3", "date": "2026-10-13", "fund": 3, "amount": 200000, "nav": 1.202612 }
+  ],
+  "history": [
+    { "date": "2026-10-15", "prices": [1.237915, 2.041555, 1.157262, 1.207080] },
+    { "date": "2026-10-19", "prices": [1.233948, 2.032389, 1.158658, 1.207959] },
+    { "date": "2026-10-21", "prices": [1.245567, 2.025300, 1.151438, 1.211181] },
+    { "date": "2026-10-26", "prices": [1.241308, 2.032868, 1.147446, 1.199819] },
+    { "date": "2026-10-29", "prices": [1.253179, 2.079617, 1.156127, 1.211326] },
+    { "date": "2026-11-12", "prices": [1.237556, 2.066831, 1.161499, 1.211879] },
+    { "date": "2026-11-18", "prices": [1.211519, 2.015598, 1.161086, 1.206448] }
+  ]
+}
